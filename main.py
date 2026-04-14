@@ -96,7 +96,7 @@ async def on_message(message):
 
         # 結果の判定
         if not done:
-            await message.reply(f"⁉️")
+            await message.reply(f"{result}⁉️")
             
 load_dotenv()
 discord_token = os.getenv("TOKEN")
