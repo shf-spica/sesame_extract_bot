@@ -68,7 +68,7 @@ async def on_message(message):
         chars = re.findall(r'.[ぁぃぅぇぉゃゅょゎァィゥェォャュョヮ]?', reading)
         
         pos = token.part_of_speech.split(',')
-        if pos[0] == '記号' or ( all(c == prev_char for c in chars) and all( c == prev_char for c in prev_chars)): # 記号または繰り返しならカウントを進めてスキップ
+        if pos[1] != '読点' and pos[0] == '記号' or ( all(c == prev_char for c in chars) and all( c == prev_char for c in prev_chars)): # 記号または繰り返しならカウントを進めてスキップ
             i += 1
             continue
 
