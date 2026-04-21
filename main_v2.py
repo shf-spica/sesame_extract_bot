@@ -82,7 +82,7 @@ async def on_message(message):
             prev_chars = chars
             prev_i = i
 
-            if len(sesame_index_2) > 0 and sesame_index_2[-1] and (pos[0] == '接続助詞' or pos[1] == '非自立'):
+            if len(sesame_index_2) > 0 and sesame_index_2[-1] == i-1 and (pos[0] == '接続助詞' or pos[1] == '非自立'):
                 sesame_index_1.append(sesame_index_2[-1])
                 sesame_index_2.pop()    #末尾を削除
                 sesame_index_2.append(i)
