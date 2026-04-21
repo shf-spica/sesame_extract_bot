@@ -64,7 +64,16 @@ async def on_message(message):
     for token in tokens:
         print(token)
 
-        reading = token.reading if token.reading != '*' else token.surface
+        # reading = token.reading if token.reading != '*' else token.surface
+
+        # 発音(8)があれば発音を、無ければ読み(7)を、それも無ければ元の文字を使う
+        if len(features) > 8 and features[8] != '*':
+            reading = features[8]
+        elif len(features) > 7 and features[7] != '*':
+            reading = features[7]
+        else:
+            reading = node.surface
+
         chars = re.findall(r'.[ぁぃぅぇぉゃゅょゎァィゥェォャュョヮ]?', reading)
         
         pos = token.part_of_speech.split(',')
