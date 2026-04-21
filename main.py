@@ -62,7 +62,7 @@ async def on_message(message):
 
     # 1回目のループ
     for token in tokens:
-        print(token)
+        # print(token)
 
         # reading = token.reading if token.reading != '*' else token.surface
 
@@ -95,7 +95,7 @@ async def on_message(message):
                 sesame_index_1.append(sesame_index_2[-1])
                 sesame_index_2.pop()    #末尾を削除
                 sesame_index_2.append(i)
-                print(i)
+                # print(i)
 
         prev_token = token.surface
         i += 1
@@ -113,9 +113,9 @@ async def on_message(message):
         i += 1
 
     if is_sesame_exist:
-        print(sesame_index_1)
-        print(sesame_index_2)
-        print(f"{result}")
+        # print(sesame_index_1)
+        # print(sesame_index_2)
+        # print(f"{result}")
         WAIT_SECONDS = 10800  # 待機時間（秒）
 
         # 条件1：リアクション用
