@@ -1,23 +1,28 @@
 import discord
-from janome.tokenizer import Tokenizer
 import re
 import asyncio
 import os
 from dotenv import load_dotenv
 
+import MeCab
+import ipadic
+
 load_dotenv()
 
 intents = discord.Intents.default()
 intents.message_content = True
-
 client = discord.Client(intents=intents)
-t = Tokenizer()
+
+t = MeCab.Tagger(ipadic.MECAB_ARGS)
 
 class Fixed_Token:
     def __init__(self, surface="", reading="", part_of_speech=""):
         self.surface = surface
         self.reading = reading
         self.part_of_speech = part_of_speech
+
+    def __str__(self):
+        return f"{self.surface}\t{self.part_of_speech},{self.reading}"
 
 @client.event
 async def on_ready():
@@ -36,7 +41,16 @@ async def on_message(message):
     
     #tokenを接尾辞をまとめて整形
     text_to_analyze = message.content
-    tokens = list(t.tokenize(text_to_analyze))
+    tokens = []
+    node = t.parseToNode(text_to_analyze)
+
+    while node:
+        if node.surface:    #空白でなければ
+            features = node.feature.split(',')
+            pos = ",".join(features[0:4])
+            reading = features[7] if len(features) > 7 else node.surface
+            tokens.append(Fixed_Token(node.surface, reading, pos))
+        node = node.next
 
     prev_char = None
     prev_token = None
