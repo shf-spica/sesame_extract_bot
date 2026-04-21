@@ -51,6 +51,7 @@ async def on_message(message):
         node = node.next
 
     prev_char = None
+    prev_chars = []
     prev_token = None
     prev_i = 0
     is_sesame_exist = False
@@ -78,6 +79,7 @@ async def on_message(message):
                 sesame_index_2.append(i)
             
             prev_char = chars[-1]
+            prev_chars = chars
             prev_i = i
 
             if len(sesame_index_2) > 0 and sesame_index_2[-1] and (pos[0] == '接続助詞' or pos[1] == '非自立'):
