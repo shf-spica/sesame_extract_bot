@@ -3,9 +3,7 @@ import re
 import asyncio
 import os
 from dotenv import load_dotenv
-
 import MeCab
-import ipadic
 
 load_dotenv()
 
@@ -13,7 +11,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 client = discord.Client(intents=intents)
 
-t = MeCab.Tagger(ipadic.MECAB_ARGS)
+t = MeCab.Tagger('-r /etc/mecabrc -d /usr/lib/x86_64-linux-gnu/mecab/dic/mecab-ipadic-neologd')
 
 class Fixed_Token:
     def __init__(self, surface="", reading="", part_of_speech=""):
@@ -57,7 +55,6 @@ async def on_message(message):
     prev_i = 0
     is_sesame_exist = False
     i = 0
-    prev_chars = []
     sesame_index_1 = []
     sesame_index_2 = []
     ignore = ['感嘆詞', 'フィラー']
@@ -70,7 +67,7 @@ async def on_message(message):
         chars = re.findall(r'.[ぁぃぅぇぉゃゅょゎァィゥェォャュョヮ]?', reading)
         
         pos = token.part_of_speech.split(',')
-        if pos[0] == '記号' or ( all(c == prev_char for c in chars) and c == prev_char for c in prev_chars): # 記号または繰り返しならカウントを進めてスキップ
+        if pos[0] == '記号' or ( all(c == prev_char for c in chars) and all( c == prev_char for c in prev_chars)): # 記号または繰り返しならカウントを進めてスキップ
             i += 1
             continue
 
@@ -81,7 +78,6 @@ async def on_message(message):
                 sesame_index_2.append(i)
             
             prev_char = chars[-1]
-            prev_chars = chars
             prev_i = i
 
             if len(sesame_index_2) > 0 and sesame_index_2[-1] and (pos[0] == '接続助詞' or pos[1] == '非自立'):
