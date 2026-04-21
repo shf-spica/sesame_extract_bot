@@ -1,23 +1,26 @@
 import discord
-from janome.tokenizer import Tokenizer
 import re
 import asyncio
 import os
 from dotenv import load_dotenv
+import MeCab
 
 load_dotenv()
 
 intents = discord.Intents.default()
 intents.message_content = True
-
 client = discord.Client(intents=intents)
-t = Tokenizer()
+
+t = MeCab.Tagger('-r /etc/mecabrc -d /usr/lib/x86_64-linux-gnu/mecab/dic/mecab-ipadic-neologd')
 
 class Fixed_Token:
     def __init__(self, surface="", reading="", part_of_speech=""):
         self.surface = surface
         self.reading = reading
         self.part_of_speech = part_of_speech
+
+    def __str__(self):
+        return f"{self.surface}\t{self.part_of_speech},{self.reading}"
 
 @client.event
 async def on_ready():
@@ -36,14 +39,23 @@ async def on_message(message):
     
     #tokenを接尾辞をまとめて整形
     text_to_analyze = message.content
-    tokens = list(t.tokenize(text_to_analyze))
+    tokens = []
+    node = t.parseToNode(text_to_analyze)
+
+    while node:
+        if node.surface:    #空白でなければ
+            features = node.feature.split(',')
+            pos = ",".join(features[0:4])
+            reading = features[7] if len(features) > 7 else node.surface
+            tokens.append(Fixed_Token(node.surface, reading, pos))
+        node = node.next
 
     prev_char = None
+    prev_chars = []
     prev_token = None
     prev_i = 0
     is_sesame_exist = False
     i = 0
-    prev_chars = []
     sesame_index_1 = []
     sesame_index_2 = []
     ignore = ['感嘆詞', 'フィラー']
@@ -52,11 +64,20 @@ async def on_message(message):
     for token in tokens:
         print(token)
 
-        reading = token.reading if token.reading != '*' else token.surface
+        # reading = token.reading if token.reading != '*' else token.surface
+
+        # 発音(8)があれば発音を、無ければ読み(7)を、それも無ければ元の文字を使う
+        if len(features) > 8 and features[8] != '*':
+            reading = features[8]
+        elif len(features) > 7 and features[7] != '*':
+            reading = features[7]
+        else:
+            reading = node.surface
+
         chars = re.findall(r'.[ぁぃぅぇぉゃゅょゎァィゥェォャュョヮ]?', reading)
         
         pos = token.part_of_speech.split(',')
-        if pos[0] == '記号' or ( all(c == prev_char for c in chars) and all( c == prev_char for c in prev_chars)): # 記号または繰り返しならカウントを進めてスキップ
+        if pos[1] != '読点' and pos[0] == '記号' or ( all(c == prev_char for c in chars) and all( c == prev_char for c in prev_chars)): # 記号または繰り返しならカウントを進めてスキップ
             i += 1
             continue
 
@@ -70,7 +91,7 @@ async def on_message(message):
             prev_chars = chars
             prev_i = i
 
-            if len(sesame_index_2) > 0 and sesame_index_2[-1] and (pos[0] == '接続助詞' or pos[1] == '非自立'):
+            if len(sesame_index_2) > 0 and sesame_index_2[-1] == i-1 and (pos[0] == '接続助詞' or pos[1] == '非自立'):
                 sesame_index_1.append(sesame_index_2[-1])
                 sesame_index_2.pop()    #末尾を削除
                 sesame_index_2.append(i)
