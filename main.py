@@ -46,7 +46,14 @@ async def on_message(message):
         if node.surface:    #空白でなければ
             features = node.feature.split(',')
             pos = ",".join(features[0:4])
-            reading = features[7] if len(features) > 7 else node.surface
+
+            if len(features) > 8 and features[8] != '*':
+                reading = features[8]
+            elif len(features) > 7 and features[7] != '*':
+                reading = features[7]
+            else:
+                reading = node.surface
+            
             tokens.append(Fixed_Token(node.surface, reading, pos))
         node = node.next
 
@@ -58,23 +65,12 @@ async def on_message(message):
     i = 0
     sesame_index_1 = []
     sesame_index_2 = []
-    ignore = ['感嘆詞', 'フィラー']
 
     # 1回目のループ
     for token in tokens:
         # print(token)
 
-        # reading = token.reading if token.reading != '*' else token.surface
-
-        # 発音(8)があれば発音を、無ければ読み(7)を、それも無ければ元の文字を使う
-        if len(features) > 8 and features[8] != '*':
-            reading = features[8]
-        elif len(features) > 7 and features[7] != '*':
-            reading = features[7]
-        else:
-            reading = node.surface
-
-        chars = re.findall(r'.[ぁぃぅぇぉゃゅょゎァィゥェォャュョヮ]?', reading)
+        chars = re.findall(r'.[ぁぃぅぇぉゃゅょゎァィゥェォャュョヮ]?', token.reading)
         
         pos = token.part_of_speech.split(',')
         if pos[1] != '読点' and pos[0] == '記号' or ( all(c == prev_char for c in chars) and all( c == prev_char for c in prev_chars)): # 記号または繰り返しならカウントを進めてスキップ
@@ -86,6 +82,8 @@ async def on_message(message):
                 is_sesame_exist = True
                 sesame_index_1.append(prev_i)
                 sesame_index_2.append(i)
+
+                dev_result.append(f"ゴマ文字：{prev_char}，分割結果：") #デバッグ用
             
             prev_char = chars[-1]
             prev_chars = chars
@@ -95,7 +93,6 @@ async def on_message(message):
                 sesame_index_1.append(sesame_index_2[-1])
                 sesame_index_2.pop()    #末尾を削除
                 sesame_index_2.append(i)
-                # print(i)
 
         prev_token = token.surface
         i += 1
@@ -109,13 +106,13 @@ async def on_message(message):
         if i in sesame_index_1:
             result += f"{token.surface}"
         elif i in sesame_index_2:
-            result += f"{token.surface}⁉️"            
+            result += f"{token.surface}⁉️"
         i += 1
 
     if is_sesame_exist:
         # print(sesame_index_1)
         # print(sesame_index_2)
-        # print(f"{result}")
+        # print(f"{result}　({dev_result}{bunnkatu})")
         WAIT_SECONDS = 10800  # 待機時間（秒）
 
         # 条件1：リアクション用
@@ -145,7 +142,7 @@ async def on_message(message):
 
         # 結果の判定
         if not done:
-            await message.reply(f"{result}⁉️")
+            await message.reply(f"{result}")
 
 discord_token = os.getenv("TOKEN")
 client.run(discord_token)
